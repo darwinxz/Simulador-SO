@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Examen - Sistemas Operativos</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .header h1 {
+            font-size: 1.5rem;
+            color: #38bdf8;
+        }
+        .progress {
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #334155;
+            border-radius: 2px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: #38bdf8;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        .question-number {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+        .question-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+        .option {
+            background: #334155;
+            border: 2px solid #475569;
+            border-radius: 12px;
+            padding: 16px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+        .option:hover:not(.disabled) {
+            background: #3b4f6b;
+            border-color: #60a5fa;
+        }
+        .option.selected-correct {
+            background: #064e3b;
+            border-color: #10b981;
+            color: #a7f3d0;
+        }
+        .option.selected-incorrect {
+            background: #450a0a;
+            border-color: #ef4444;
+            color: #fecaca;
+        }
+        .option.show-correct {
+            background: #064e3b;
+            border-color: #10b981;
+            color: #a7f3d0;
+        }
+        .option.disabled {
+            cursor: default;
+            opacity: 0.85;
+        }
+        .feedback {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            font-weight: 500;
+            display: none;
+        }
+        .feedback.correct {
+            display: block;
+            background: #064e3b;
+            border: 1px solid #10b981;
+            color: #a7f3d0;
+        }
+        .feedback.incorrect {
+            display: block;
+            background: #450a0a;
+            border: 1px solid #ef4444;
+            color: #fecaca;
+        }
+        .btn {
+            background: #38bdf8;
+            color: #0f172a;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover {
+            background: #7dd3fc;
+        }
+        .btn:disabled {
+            background: #475569;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background: #475569;
+            color: #e2e8f0;
+        }
+        .btn-secondary:hover {
+            background: #64748b;
+        }
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .result {
+            text-align: center;
+            padding: 20px 0;
+            display: none;
+        }
+        .result h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .result .score {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            margin-bottom: 20px;
+        }
+        .result .emoji {
+            font-size: 4rem;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <div class="header">
+            <h1>Simulador SO</h1>
+            <span class="progress" id="progressText">1 / 75</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-bar-fill" id="progressFill" style="width: 1.33%"></div>
+        </div>
+
+        <div id="quizArea">
+            <div class="question-number" id="questionNumber">Pregunta 1</div>
+            <div class="question-text" id="questionText"></div>
+            <div class="options" id="optionsContainer"></div>
+            <div class="feedback" id="feedback"></div>
+            <div class="actions">
+                <button class="btn btn-secondary" id="restartBtn">Reiniciar</button>
+                <button class="btn" id="nextBtn" disabled>Siguiente</button>
+            </div>
+        </div>
+
+        <div class="result" id="resultArea">
+            <div class="emoji" id="resultEmoji"></div>
+            <h2 id="resultTitle"></h2>
+            <div class="score" id="resultScore"></div>
+            <button class="btn" id="playAgainBtn">Volver a intentar</button>
+        </div>
+    </div>
+
+    <script>
+        const preguntas = [
+            {
+                pregunta: "¿Qué significa montar un sistema de archivos?",
+                opciones: [
+                    "Convertir un archivo secuencial en un archivo de acceso directo.",
+                    "Copiar todos los archivos del disco hacia la memoria principal.",
+                    "Integrar un sistema de archivos a un punto del árbol de directorios para permitir su acceso.",
+                    "Eliminar todas las particiones del disco para crear una nueva estructura."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿En qué se diferencia la segmentación de la paginación?",
+                opciones: [
+                    "La segmentación elimina la necesidad de protección de memoria, mientras que la paginación no.",
+                    "La segmentación usa bloques fijos y la paginación usa unidades lógicas variables.",
+                    "La segmentación usa unidades lógicas de tamaño variable, mientras que la paginación usa bloques de tamaño fijo.",
+                    "La segmentación solo se usa en discos externos y la paginación solo en impresoras."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Qué es la segmentación de memoria?",
+                opciones: [
+                    "La división de la memoria física en bloques iguales llamados marcos.",
+                    "El almacenamiento permanente de archivos en sectores consecutivos del disco.",
+                    "La organización de la memoria en unidades lógicas de tamaño variable, como código, datos y pila.",
+                    "La transferencia directa de datos entre dispositivos sin intervención de la CPU."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Cuál es la diferencia entre fragmentación interna y fragmentación externa?",
+                opciones: [
+                    "La fragmentación interna ocurre en el disco y la externa únicamente en la memoria caché.",
+                    "La interna afecta solo al kernel; la externa afecta únicamente a dispositivos de entrada y salida.",
+                    "La fragmentación interna elimina procesos; la externa comprime archivos del sistema.",
+                    "La interna es espacio desperdiciado dentro de un bloque asignado; la externa son huecos libres separados entre bloques asignados."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Qué ocurre cuando se produce una falla de página?",
+                opciones: [
+                    "El sistema operativo localiza la página requerida en el almacenamiento secundario y la carga en memoria.",
+                    "La CPU convierte automáticamente la página faltante en un segmento de memoria.",
+                    "El proceso termina inmediatamente porque el sistema operativo no puede continuar.",
+                    "El controlador de pantalla reinicia la interfaz gráfica del usuario."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Qué significan confidencialidad, integridad y disponibilidad?",
+                opciones: [
+                    "Confidencialidad es borrar datos, integridad es comprimir archivos y disponibilidad es apagar servicios.",
+                    "Confidencialidad es compartir todo, integridad es duplicar datos y disponibilidad es restringir siempre el acceso.",
+                    "Confidencialidad es usar firewall, integridad es usar antivirus y disponibilidad es usar contraseñas largas.",
+                    "Confidencialidad es acceso solo autorizado; integridad es evitar alteraciones indebidas; disponibilidad es mantener recursos accesibles."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Qué es el control de acceso?",
+                opciones: [
+                    "El mecanismo mediante el cual el sistema verifica si un sujeto tiene permiso para usar un recurso.",
+                    "La técnica que reemplaza páginas antiguas cuando no hay marcos libres.",
+                    "El proceso de aumentar automáticamente la memoria disponible para cada proceso.",
+                    "El procedimiento de convertir archivos secuenciales en archivos de acceso directo."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Cuál de los siguientes ejemplos corresponde a una interfaz de línea de comandos?",
+                opciones: [
+                    "Una pantalla táctil usada solo para dibujar imágenes.",
+                    "Un administrador visual de ventanas.",
+                    "Un panel gráfico basado exclusivamente en iconos.",
+                    "Una terminal donde el usuario escribe instrucciones como cd, dir, ls o mkdir."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Cuál de las siguientes es una operación fundamental de un sistema operativo?",
+                opciones: [
+                    "Diseñar físicamente los circuitos del procesador.",
+                    "Eliminar la necesidad de hardware en el computador.",
+                    "Administrar procesos, memoria, archivos y dispositivos de entrada/salida.",
+                    "Crear automáticamente todos los programas de aplicación."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Qué es la asignación de memoria contigua?",
+                opciones: [
+                    "La división del proceso en páginas de tamaño fijo ubicadas en marcos dispersos.",
+                    "La organización de la memoria en segmentos lógicos de tamaño variable.",
+                    "La copia automática de todos los procesos desde la RAM hacia el disco.",
+                    "La ubicación de cada proceso en un bloque continuo de memoria física."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Qué componente suele considerarse el núcleo central de un sistema operativo por su cercanía con el hardware?",
+                opciones: [
+                    "El kernel o núcleo.",
+                    "El explorador de archivos.",
+                    "El editor de texto.",
+                    "El navegador web."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Qué es el acceso directo a un archivo?",
+                opciones: [
+                    "Un método que permite acceder a una posición específica del archivo sin recorrer todo el contenido anterior.",
+                    "Una técnica que solo permite leer archivos almacenados en memoria caché.",
+                    "Un mecanismo usado únicamente para conectar dispositivos de entrada.",
+                    "Un método que obliga a recorrer todos los datos desde el inicio para llegar a un registro."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Qué son los dispositivos de entrada y salida?",
+                opciones: [
+                    "Programas internos que sustituyen al kernel en la administración de memoria.",
+                    "Archivos temporales que almacenan instrucciones de los procesos.",
+                    "Segmentos de memoria usados exclusivamente por los compiladores.",
+                    "Componentes de hardware que permiten la comunicación entre el computador y el entorno externo."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Qué describe mejor a un hilo en el contexto de los sistemas operativos?",
+                opciones: [
+                    "Un programa completo almacenado en disco que aún no ha iniciado su ejecución.",
+                    "Un componente físico del procesador encargado exclusivamente de ejecutar instrucciones aritméticas.",
+                    "Una unidad básica de ejecución dentro de un proceso que comparte recursos con otros hilos del mismo proceso.",
+                    "Una unidad independiente de almacenamiento permanente administrada por el sistema de archivos."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Qué función cumple la memoria principal en un sistema operativo?",
+                opciones: [
+                    "Ejecutar directamente los programas desde el disco duro sin cargarlos en memoria.",
+                    "Almacenar permanentemente todos los archivos del usuario, incluso cuando el equipo está apagado.",
+                    "Sustituir al procesador en la ejecución de instrucciones aritméticas y lógicas.",
+                    "Almacenar temporalmente los programas y datos que necesita la CPU durante la ejecución."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Cuál es la diferencia entre control de acceso discrecional, obligatorio y basado en roles?",
+                opciones: [
+                    "El discrecional permite que el propietario defina permisos; el obligatorio aplica políticas del sistema; el basado en roles asigna permisos según funciones.",
+                    "El discrecional depende del hardware, el obligatorio depende del navegador y el basado en roles depende del tamaño del disco.",
+                    "El discrecional se usa solo en redes, el obligatorio solo en memoria RAM y el basado en roles solo en impresoras.",
+                    "El discrecional usa cifrado, el obligatorio usa contraseñas y el basado en roles solo usa antivirus."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Qué es la seguridad en un sistema operativo?",
+                opciones: [
+                    "La capacidad del sistema para ejecutar más procesos sin usar memoria virtual.",
+                    "La capacidad de proteger el sistema frente a accesos no autorizados, ataques, fallos y alteraciones.",
+                    "La técnica que permite montar unidades externas automáticamente.",
+                    "La organización de archivos en directorios y subdirectorios."
+                ],
+                respuestaCorrecta: 1
+            },
+            {
+                pregunta: "¿Por qué son importantes las actualizaciones, copias de seguridad y registros del sistema?",
+                opciones: [
+                    "Porque corrigen vulnerabilidades, permiten recuperar información y facilitan investigar eventos o incidentes.",
+                    "Porque permiten que todos los usuarios trabajen con permisos administrativos.",
+                    "Porque eliminan la necesidad de autenticar usuarios en el sistema operativo.",
+                    "Porque sustituyen completamente al firewall y al control de acceso."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Qué es la criptografía?",
+                opciones: [
+                    "Un mecanismo para organizar archivos dentro de carpetas y subcarpetas.",
+                    "El conjunto de técnicas que permite proteger información mediante cifrado, claves y funciones matemáticas.",
+                    "Una herramienta exclusiva para detectar fallas de hardware en dispositivos de entrada y salida.",
+                    "Un algoritmo de planificación que asigna CPU a procesos críticos."
+                ],
+                respuestaCorrecta: 1
+            },
+            {
+                pregunta: "¿Cuál es la diferencia entre los algoritmos FIFO y LRU en la sustitución de páginas?",
+                opciones: [
+                    "FIFO reemplaza la página más usada y LRU reemplaza siempre la más nueva.",
+                    "FIFO evita todas las fallas de página, mientras que LRU las provoca intencionalmente.",
+                    "FIFO reemplaza la página que ingresó primero; LRU reemplaza la página menos recientemente utilizada.",
+                    "FIFO solo funciona con segmentación y LRU solo con asignación contigua."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Qué es el acceso secuencial a un archivo?",
+                opciones: [
+                    "Un método que permite leer cualquier posición del archivo sin recorrer datos anteriores.",
+                    "Un método en el que los datos se procesan en orden, desde el inicio hacia el final.",
+                    "Un procedimiento exclusivo para montar discos externos.",
+                    "Una técnica que cifra automáticamente cada bloque del archivo."
+                ],
+                respuestaCorrecta: 1
+            },
+            {
+                pregunta: "¿Qué es la autenticación de usuarios?",
+                opciones: [
+                    "El proceso mediante el cual el sistema verifica la identidad de un usuario antes de permitirle acceder.",
+                    "El mecanismo que decide qué página debe sustituirse en memoria.",
+                    "La técnica que organiza archivos en un árbol de directorios.",
+                    "El proceso de asignar memoria física a cada página de un proceso."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Qué describe mejor el arranque del sistema operativo?",
+                opciones: [
+                    "La conexión de un monitor externo después de iniciar sesión.",
+                    "La eliminación automática de archivos temporales del usuario.",
+                    "El proceso mediante el cual el equipo inicializa hardware, localiza el cargador de arranque y carga el sistema operativo en memoria.",
+                    "La instalación manual de todas las aplicaciones de oficina."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Qué información puede administrar un directorio dentro del sistema de archivos?",
+                opciones: [
+                    "Solamente la temperatura del procesador y la velocidad de los ventiladores.",
+                    "Los nombres de archivos, rutas, atributos, permisos, fechas y referencias de ubicación.",
+                    "Solo las direcciones IP de los dispositivos conectados.",
+                    "Únicamente los algoritmos de planificación de CPU."
+                ],
+                respuestaCorrecta: 1
+            },
+            {
+                pregunta: "¿Qué es una amenaza del sistema o de la red?",
+                opciones: [
+                    "Una situación, acción o vulnerabilidad que puede afectar la confidencialidad, integridad o disponibilidad de recursos del sistema o la red.",
+                    "Una técnica de compresión usada para reducir el tamaño de los archivos.",
+                    "Un método normal de planificación de procesos en sistemas multiprocesador.",
+                    "Una estructura de datos usada para organizar archivos dentro de un directorio."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Cómo manejan generalmente los sistemas operativos modernos los hilos?",
+                opciones: [
+                    "Los reconocen como unidades planificables de ejecución y los administran mediante el kernel y el planificador.",
+                    "Los tratan únicamente como archivos almacenados en disco.",
+                    "Los ejecutan sin relación con procesos ni memoria.",
+                    "Los eliminan para evitar la multitarea."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Por qué la memoria del kernel requiere una administración especial?",
+                opciones: [
+                    "Porque solo almacena archivos temporales del usuario común.",
+                    "Porque el kernel se ejecuta solamente desde dispositivos externos.",
+                    "Porque contiene estructuras críticas del sistema operativo y opera con privilegios elevados.",
+                    "Porque la memoria del kernel no participa en la ejecución del sistema operativo."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Qué son los marcos de página?",
+                opciones: [
+                    "Bloques de memoria física de tamaño fijo donde se cargan las páginas de los procesos.",
+                    "Archivos ocultos que almacenan copias de seguridad del sistema operativo.",
+                    "Partes variables del programa definidas por el compilador.",
+                    "Registros internos de la CPU utilizados para guardar direcciones de red."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Cuál característica identifica principalmente a un sistema operativo distribuido?",
+                opciones: [
+                    "Se limita a administrar archivos locales sin comunicación externa.",
+                    "Solo permite ejecutar un programa a la vez.",
+                    "Funciona únicamente en una computadora sin conexión a red.",
+                    "Coordina varios equipos conectados para que trabajen como un sistema integrado."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Qué representan los sujetos, objetos y permisos en una matriz de acceso?",
+                opciones: [
+                    "Los sujetos son dispositivos físicos, los objetos son cables de red y los permisos son señales eléctricas.",
+                    "Los sujetos son algoritmos de cifrado, los objetos son claves públicas y los permisos son hashes.",
+                    "Los sujetos son archivos, los objetos son contraseñas y los permisos son direcciones IP.",
+                    "Los sujetos son usuarios o procesos, los objetos son recursos protegidos y los permisos son acciones autorizadas."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Qué ventaja ofrece el multihilo frente a la ejecución estrictamente secuencial?",
+                opciones: [
+                    "Reduce a cero el uso de memoria principal.",
+                    "Permite que varias actividades de una aplicación progresen de manera concurrente, mejorando respuesta y aprovechamiento del procesador.",
+                    "Evita la intervención del sistema operativo en la ejecución.",
+                    "Garantiza que nunca existan errores lógicos en el programa."
+                ],
+                respuestaCorrecta: 1
+            },
+            {
+                pregunta: "¿Por qué es necesario montar un sistema de archivos antes de acceder a sus datos?",
+                opciones: [
+                    "Porque sin montaje los archivos se eliminan automáticamente del dispositivo.",
+                    "Porque el montaje reemplaza al sistema operativo durante la lectura de archivos.",
+                    "Porque el sistema operativo debe reconocer su estructura e integrarla para poder leer y administrar sus contenidos.",
+                    "Porque el montaje convierte la memoria RAM en almacenamiento permanente."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Qué es la protección en un sistema operativo?",
+                opciones: [
+                    "El conjunto de mecanismos que regulan el acceso de usuarios y procesos a los recursos del sistema.",
+                    "Un mecanismo encargado únicamente de instalar actualizaciones automáticas del sistema.",
+                    "Una técnica que cifra todos los archivos sin diferenciar usuarios ni permisos.",
+                    "Un procedimiento usado solo para mejorar la velocidad de arranque del computador."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Qué problemas pueden presentarse si la memoria del kernel se gestiona de forma incorrecta?",
+                opciones: [
+                    "Solo se desordenan los nombres de archivos del usuario.",
+                    "Se eliminan automáticamente todos los dispositivos de entrada.",
+                    "Únicamente se reduce el brillo de la pantalla.",
+                    "Se pueden producir fallos del sistema, vulnerabilidades, corrupción de datos o pérdida de estabilidad."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Qué son las llamadas al sistema?",
+                opciones: [
+                    "Errores que siempre detienen el funcionamiento del equipo.",
+                    "Comandos usados únicamente para cambiar la apariencia del escritorio.",
+                    "Solicitudes que un programa realiza al sistema operativo para acceder a servicios protegidos.",
+                    "Mensajes publicitarios generados por aplicaciones."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Qué es un ataque de denegación de servicio?",
+                opciones: [
+                    "Un método de cifrado que impide leer datos sin la clave correcta.",
+                    "Una técnica de respaldo que protege archivos ante fallos del sistema.",
+                    "Un ataque que busca saturar o interrumpir un servicio para impedir el acceso de usuarios legítimos.",
+                    "Un proceso de autenticación que solicita dos factores al usuario."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Cómo se relacionan los hilos con el rendimiento del equipo?",
+                opciones: [
+                    "Una gestión adecuada de hilos puede mejorar la utilización de CPU, la capacidad de respuesta y el paralelismo en equipos multinúcleo.",
+                    "Los hilos solo afectan el rendimiento cuando no existe sistema operativo.",
+                    "Cada hilo aumenta siempre el rendimiento sin importar la cantidad de recursos disponibles.",
+                    "Los hilos reducen obligatoriamente el uso de todos los recursos del sistema."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Qué es la E/S programada?",
+                opciones: [
+                    "Un método en el que el dispositivo transfiere datos directamente a memoria sin intervención de la CPU.",
+                    "Una técnica exclusiva para cifrar archivos almacenados en disco.",
+                    "Un procedimiento de sustitución de páginas usado por la memoria virtual.",
+                    "Un mecanismo en el que la CPU participa activamente verificando el estado del dispositivo y transfiriendo datos."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Por qué la arquitectura de un sistema informático es relevante para estudiar sistemas operativos?",
+                opciones: [
+                    "Porque reemplaza completamente las funciones del hardware.",
+                    "Porque determina únicamente el color y apariencia del entorno gráfico.",
+                    "Porque permite comprender cómo el sistema operativo interactúa con procesador, memoria, dispositivos y aplicaciones.",
+                    "Porque evita que existan programas de usuario en el sistema."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Cuál acción normalmente requiere una llamada al sistema?",
+                opciones: [
+                    "Imaginar la salida esperada de un algoritmo.",
+                    "Leer un concepto teórico sin ejecutar software.",
+                    "Cambiar mentalmente el nombre de una variable durante el diseño.",
+                    "Crear un archivo desde un programa de usuario."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Cuál situación evidencia mejor la influencia del entorno informático sobre el sistema operativo?",
+                opciones: [
+                    "Usar una imagen decorativa como fondo de escritorio.",
+                    "Ordenar alfabéticamente los accesos directos del escritorio.",
+                    "Seleccionar un sistema operativo de servidor por sus necesidades de red, seguridad y concurrencia.",
+                    "Cambiar el color de una carpeta sin modificar permisos."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Cuál opción representa mejor el concepto de arquitectura de un sistema informático?",
+                opciones: [
+                    "El procedimiento para instalar un sistema operativo.",
+                    "El diseño visual de la interfaz gráfica del sistema.",
+                    "La lista de aplicaciones instaladas en un equipo.",
+                    "La estructura integrada de hardware, software, datos, redes y mecanismos de interacción que permiten el funcionamiento del sistema."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Qué es la paginación bajo demanda?",
+                opciones: [
+                    "Un método para asignar memoria únicamente en bloques contiguos de tamaño variable.",
+                    "Una técnica que carga todos los programas completos en memoria antes de iniciar su ejecución.",
+                    "Un mecanismo para eliminar la tabla de páginas y acelerar el acceso al disco.",
+                    "Una técnica que carga en memoria solo las páginas que el proceso necesita durante su ejecución."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Por qué el uso de hilos puede mejorar el rendimiento de una aplicación?",
+                opciones: [
+                    "Porque permite dividir tareas en flujos de ejecución concurrentes que pueden aprovechar mejor el tiempo de CPU y la capacidad de respuesta.",
+                    "Porque elimina por completo la necesidad de planificación del procesador.",
+                    "Porque impide que dos tareas se ejecuten de manera concurrente.",
+                    "Porque convierte automáticamente cualquier programa en un sistema distribuido."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Cuál de las siguientes opciones describe mejor la estructura de un sistema operativo?",
+                opciones: [
+                    "El almacenamiento exclusivo de archivos personales del usuario.",
+                    "Una colección de periféricos conectados a la computadora.",
+                    "La organización interna de componentes como núcleo, servicios, controladores, sistema de archivos e interfaz.",
+                    "Un conjunto de documentos técnicos usados para instalar programas."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Cuál es la diferencia principal entre un proceso y un hilo?",
+                opciones: [
+                    "El proceso posee su propio espacio de memoria, mientras que los hilos de un mismo proceso comparten recursos como memoria y archivos abiertos.",
+                    "El proceso solo puede ejecutarse en sistemas monousuario, mientras que el hilo solo existe en sistemas multiusuario.",
+                    "El proceso es una unidad secundaria de ejecución, mientras que el hilo administra la memoria virtual.",
+                    "El hilo siempre requiere más memoria que un proceso porque contiene todos los recursos del sistema operativo."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Cuál es la diferencia entre criptografía simétrica, criptografía asimétrica y función hash?",
+                opciones: [
+                    "La simétrica usa dos claves públicas, la asimétrica no usa claves y el hash permite recuperar el texto original.",
+                    "La simétrica se usa solo en impresoras, la asimétrica solo en monitores y el hash solo en teclados.",
+                    "La simétrica elimina contraseñas, la asimétrica borra archivos y el hash reemplaza el firewall.",
+                    "La simétrica usa una misma clave para cifrar y descifrar; la asimétrica usa clave pública y privada; el hash genera una huella no reversible."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Cuál elemento participa normalmente en las primeras etapas del arranque de una computadora?",
+                opciones: [
+                    "El firmware del equipo, como BIOS o UEFI.",
+                    "Un procesador de texto abierto por el usuario.",
+                    "Un navegador web con varias pestañas activas.",
+                    "Una hoja de cálculo almacenada en documentos."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿En qué tipo de aplicación resulta especialmente útil el uso de hilos?",
+                opciones: [
+                    "En una aplicación que solo ejecuta una instrucción y finaliza inmediatamente.",
+                    "En una carpeta del sistema operativo que solo agrupa archivos.",
+                    "En un archivo de texto que permanece almacenado sin ejecutarse.",
+                    "En un navegador web que descarga contenido, reproduce multimedia y mantiene activa la interfaz al mismo tiempo."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Cuál es la función principal de la interfaz de usuario de un sistema operativo?",
+                opciones: [
+                    "Permitir la interacción entre el usuario y los servicios del sistema operativo.",
+                    "Eliminar la necesidad de controladores de dispositivos.",
+                    "Reemplazar físicamente al procesador.",
+                    "Ejecutar instrucciones eléctricas directamente en la memoria RAM."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Qué diferencia existe entre E/S por interrupciones y acceso directo a memoria o DMA?",
+                opciones: [
+                    "La E/S por interrupciones elimina la CPU; DMA obliga a la CPU a transferir cada byte manualmente.",
+                    "La E/S por interrupciones avisa a la CPU cuando el dispositivo requiere atención; DMA permite transferencias directas entre dispositivo y memoria.",
+                    "Ambas técnicas son idénticas y solo cambian el nombre según el sistema operativo.",
+                    "La E/S por interrupciones se usa solo en archivos de texto; DMA se usa solo en directorios."
+                ],
+                respuestaCorrecta: 1
+            },
+            {
+                pregunta: "¿Cuál es la diferencia entre autenticación y autorización?",
+                opciones: [
+                    "La autenticación se aplica solo a redes y la autorización solo a memoria virtual.",
+                    "La autenticación verifica la identidad; la autorización determina qué acciones o recursos puede usar el usuario autenticado.",
+                    "La autenticación cifra archivos y la autorización elimina malware.",
+                    "La autenticación define permisos y la autorización verifica la identidad del usuario."
+                ],
+                respuestaCorrecta: 1
+            },
+            {
+                pregunta: "¿Qué es el intercambio o swapping en la gestión de memoria?",
+                opciones: [
+                    "El proceso de eliminar definitivamente programas inactivos del sistema operativo.",
+                    "La división de un archivo en bloques para guardarlo de forma contigua en el disco.",
+                    "El traslado temporal de procesos o partes de ellos entre la memoria principal y el almacenamiento secundario.",
+                    "La conversión automática de memoria física en memoria caché del procesador."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "En una computadora, ¿qué elemento cumple la función principal de ejecutar instrucciones y coordinar operaciones básicas de procesamiento?",
+                opciones: [
+                    "La unidad central de procesamiento.",
+                    "La memoria secundaria.",
+                    "El sistema de archivos.",
+                    "El monitor del sistema."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "Cuando un sistema operativo decide qué proceso utilizará la CPU en un momento determinado, está realizando una operación relacionada con:",
+                opciones: [
+                    "La edición de documentos.",
+                    "La configuración del monitor.",
+                    "La compresión física del disco duro.",
+                    "La gestión y planificación de procesos."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Qué es un cortafuegos o firewall?",
+                opciones: [
+                    "Un algoritmo de sustitución de páginas usado por la memoria virtual.",
+                    "Un método de autenticación basado únicamente en huella digital.",
+                    "Un mecanismo que controla el tráfico de red permitido o bloqueado según reglas de seguridad.",
+                    "Un sistema de archivos diseñado para montar discos externos."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Qué es una matriz de acceso?",
+                opciones: [
+                    "Un modelo que representa los permisos que tienen los sujetos sobre los objetos del sistema.",
+                    "Una herramienta exclusiva para organizar archivos en carpetas jerárquicas.",
+                    "Una tabla que registra únicamente la velocidad de lectura y escritura de los discos.",
+                    "Un algoritmo de cifrado usado para proteger contraseñas dentro del sistema."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Cuáles son modelos clásicos de relación entre hilos de usuario y hilos de kernel?",
+                opciones: [
+                    "Muchos a uno, uno a uno y muchos a muchos.",
+                    "Monousuario, multiusuario y distribuido.",
+                    "Secuencial, condicional e iterativo.",
+                    "FIFO, LIFO y Round Robin."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Qué desafío es especialmente importante en los sistemas distribuidos?",
+                opciones: [
+                    "Elegir el fondo de pantalla del escritorio.",
+                    "Eliminar todos los mecanismos de seguridad.",
+                    "Coordinar comunicación, sincronización y disponibilidad entre equipos conectados.",
+                    "Evitar completamente el uso de redes."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Qué diferencia existe entre hilos de usuario e hilos de kernel?",
+                opciones: [
+                    "Los hilos de kernel solo se usan en aplicaciones web, mientras que los de usuario solo se usan en videojuegos.",
+                    "Los hilos de usuario son dispositivos físicos, mientras que los hilos de kernel son archivos del sistema.",
+                    "Los hilos de usuario no pertenecen a procesos, mientras que los hilos de kernel sí son procesos completos.",
+                    "Los hilos de usuario son gestionados principalmente por bibliotecas en espacio de usuario, mientras que los hilos de kernel son gestionados directamente por el sistema operativo."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Por qué es importante asignar correctamente los marcos de página a los procesos?",
+                opciones: [
+                    "Porque permite que todos los procesos se ejecuten sin utilizar CPU.",
+                    "Porque obliga a que todos los procesos ocupen memoria contigua.",
+                    "Porque una mala asignación puede aumentar las fallas de página y degradar el rendimiento del sistema.",
+                    "Porque evita que el sistema operativo tenga que usar controladores de dispositivo."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Por qué el sistema operativo necesita sustituir páginas en memoria?",
+                opciones: [
+                    "Porque cuando no hay marcos libres, debe retirar una página residente para cargar otra requerida.",
+                    "Porque las páginas siempre deben almacenarse en memoria contigua.",
+                    "Porque la memoria virtual elimina automáticamente las tablas de páginas.",
+                    "Porque todos los procesos deben tener exactamente una sola página activa."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Por qué un firewall debe formar parte de una estrategia de seguridad más amplia?",
+                opciones: [
+                    "Porque su función principal es aumentar la memoria disponible para los procesos.",
+                    "Porque un firewall reemplaza por completo las contraseñas, actualizaciones y copias de seguridad.",
+                    "Porque solo sirve para acelerar la conexión a internet y no tiene relación con la seguridad.",
+                    "Porque controla tráfico de red, pero no soluciona por sí solo malware, contraseñas débiles, errores de configuración o falta de actualizaciones."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Por qué el sistema operativo necesita una interfaz uniforme de entrada/salida?",
+                opciones: [
+                    "Para ocultar las diferencias entre dispositivos y ofrecer operaciones comunes como abrir, leer, escribir y cerrar.",
+                    "Para impedir que las aplicaciones accedan a archivos del usuario.",
+                    "Para que todos los dispositivos tengan exactamente la misma velocidad física.",
+                    "Para eliminar la necesidad de controladores en todos los dispositivos."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Cuál afirmación describe correctamente el modelo muchos a uno?",
+                opciones: [
+                    "Cada proceso se convierte automáticamente en un sistema multiprocesador.",
+                    "Un único hilo de usuario se divide en varios procesos independientes.",
+                    "Varios hilos de usuario se asignan a un único hilo del kernel.",
+                    "Cada hilo de usuario se asigna a un hilo diferente del kernel."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Qué establece el principio de mínimo privilegio?",
+                opciones: [
+                    "Que los permisos deben asignarse de forma aleatoria para evitar ataques externos.",
+                    "Que los recursos críticos deben quedar disponibles para cualquier aplicación instalada.",
+                    "Que todos los usuarios deben trabajar siempre con permisos de administrador.",
+                    "Que cada usuario, proceso o programa debe tener solo los permisos necesarios para cumplir su función."
+                ],
+                respuestaCorrecta: 3
+            },
+            {
+                pregunta: "¿Cuál de las siguientes opciones representa correctamente una ventaja y una desventaja del uso de hilos?",
+                opciones: [
+                    "Ventaja: permiten concurrencia eficiente; desventaja: pueden generar problemas de sincronización si comparten datos.",
+                    "Ventaja: aíslan completamente la memoria; desventaja: no pueden comunicarse entre sí.",
+                    "Ventaja: eliminan las condiciones de carrera; desventaja: impiden el uso de memoria compartida.",
+                    "Ventaja: sustituyen al sistema operativo; desventaja: solo funcionan en aplicaciones de consola."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Cuál de las siguientes afirmaciones describe mejor la organización de una computadora desde la perspectiva de un sistema operativo?",
+                opciones: [
+                    "Es la disposición funcional de CPU, memoria, dispositivos de entrada/salida y buses para ejecutar instrucciones y transferir datos.",
+                    "Es la clasificación comercial del equipo según marca, modelo y generación.",
+                    "Es el conjunto de programas instalados por el usuario para realizar tareas de oficina.",
+                    "Es únicamente la forma física en que se ubican los componentes dentro del gabinete."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Qué función cumplen los controladores de dispositivos?",
+                opciones: [
+                    "Eliminar la necesidad de usar hardware físico en el computador.",
+                    "Asignar permisos de usuario dentro de la matriz de acceso.",
+                    "Servir de intermediarios entre el sistema operativo y el hardware específico del dispositivo.",
+                    "Convertir todos los archivos en páginas de memoria virtual."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "Qué se entiende por entorno informático en el contexto de sistemas operativos?",
+                opciones: [
+                    "El lugar físico donde se guarda una computadora apagada.",
+                    "La marca comercial del procesador instalado.",
+                    "El conjunto de hardware, software, usuarios, redes y condiciones de uso donde opera el sistema.",
+                    "La cantidad de colores disponibles en la interfaz gráfica."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Qué se entiende por modelo multihilo en sistemas operativos?",
+                opciones: [
+                    "Una técnica exclusiva para duplicar archivos ejecutables en memoria secundaria.",
+                    "Un método para guardar varios programas en una única carpeta del sistema.",
+                    "Una forma de organizar la relación entre hilos de usuario y hilos del kernel para ejecutar tareas concurrentes.",
+                    "Un algoritmo usado únicamente para ordenar procesos por tamaño de archivo."
+                ],
+                respuestaCorrecta: 2
+            },
+            {
+                pregunta: "¿Cómo se relaciona la memoria virtual con la paginación bajo demanda?",
+                opciones: [
+                    "La memoria virtual puede usar paginación bajo demanda para cargar solo las páginas requeridas por el proceso.",
+                    "La memoria virtual convierte todos los archivos del usuario en segmentos fijos.",
+                    "La memoria virtual impide que existan fallas de página durante la ejecución.",
+                    "La paginación bajo demanda reemplaza completamente al almacenamiento secundario."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Cuál es la diferencia entre virus, gusano y troyano?",
+                opciones: [
+                    "El virus se adjunta a archivos, el gusano se propaga por sí mismo en redes y el troyano aparenta ser legítimo pero oculta funciones maliciosas.",
+                    "El virus es siempre inofensivo, el gusano es un método de respaldo y el troyano es una técnica de autenticación.",
+                    "El virus cifra datos, el gusano administra permisos y el troyano reemplaza la memoria RAM.",
+                    "El virus solo afecta impresoras, el gusano solo afecta monitores y el troyano solo afecta teclados."
+                ],
+                respuestaCorrecta: 0
+            },
+            {
+                pregunta: "¿Qué es la memoria virtual?",
+                opciones: [
+                    "Un tipo de memoria exclusiva del monitor para representar imágenes.",
+                    "Una técnica que permite a los procesos usar un espacio de direcciones mayor o independiente de la memoria física disponible.",
+                    "Un área permanente del disco donde se guardan solamente archivos multimedia.",
+                    "Una memoria física adicional instalada en la placa base para duplicar la RAM."
+                ],
+                respuestaCorrecta: 1
+            }
+        ];
+
+        let currentIndex = 0;
+        let score = 0;
+        let answered = false;
+        let quizFinished = false;
+        const total = preguntas.length;
+
+        const questionNumber = document.getElementById('questionNumber');
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const feedback = document.getElementById('feedback');
+        const nextBtn = document.getElementById('nextBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        const progressText = document.getElementById('progressText');
+        const progressFill = document.getElementById('progressFill');
+        const quizArea = document.getElementById('quizArea');
+        const resultArea = document.getElementById('resultArea');
+        const resultEmoji = document.getElementById('resultEmoji');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultScore = document.getElementById('resultScore');
+
+        function shuffleArray(arr) {
+            const shuffled = [...arr];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        let shuffledQuestions = [];
+
+        function initQuiz() {
+            shuffledQuestions = shuffleArray(preguntas);
+            currentIndex = 0;
+            score = 0;
+            answered = false;
+            quizFinished = false;
+            quizArea.style.display = 'block';
+            resultArea.style.display = 'none';
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            if (currentIndex >= total) {
+                showResult();
+                return;
+            }
+
+            answered = false;
+            feedback.className = 'feedback';
+            feedback.style.display = 'none';
+            nextBtn.disabled = true;
+
+            const q = shuffledQuestions[currentIndex];
+            questionNumber.textContent = `Pregunta ${currentIndex + 1}`;
+            questionText.textContent = q.pregunta;
+            progressText.textContent = `${currentIndex + 1} / ${total}`;
+            progressFill.style.width = `${((currentIndex + 1) / total) * 100}%`;
+
+            optionsContainer.innerHTML = '';
+            const letters = ['A', 'B', 'C', 'D'];
+            q.opciones.forEach((opt, idx) => {
+                const div = document.createElement('div');
+                div.className = 'option';
+                div.textContent = `${letters[idx]}. ${opt}`;
+                div.dataset.index = idx;
+                div.addEventListener('click', () => selectOption(idx));
+                optionsContainer.appendChild(div);
+            });
+        }
+
+        function selectOption(idx) {
+            if (answered || quizFinished) return;
+            answered = true;
+
+            const q = shuffledQuestions[currentIndex];
+            const options = optionsContainer.querySelectorAll('.option');
+            const isCorrect = idx === q.respuestaCorrecta;
+
+            options.forEach((opt, i) => {
+                opt.classList.add('disabled');
+                if (i === idx && isCorrect) {
+                    opt.classList.add('selected-correct');
+                } else if (i === idx && !isCorrect) {
+                    opt.classList.add('selected-incorrect');
+                } else if (i === q.respuestaCorrecta) {
+                    opt.classList.add('show-correct');
+                }
+            });
+
+            if (isCorrect) {
+                score++;
+                feedback.className = 'feedback correct';
+                feedback.textContent = 'Correcto!';
+            } else {
+                feedback.className = 'feedback incorrect';
+                const correctAnswer = q.opciones[q.respuestaCorrecta];
+                feedback.textContent = `Incorrecto. La respuesta correcta es: ${correctAnswer}`;
+            }
+            feedback.style.display = 'block';
+
+            if (currentIndex === total - 1) {
+                nextBtn.textContent = 'Ver resultados';
+            } else {
+                nextBtn.textContent = 'Siguiente';
+            }
+            nextBtn.disabled = false;
+        }
+
+        function nextQuestion() {
+            if (nextBtn.disabled) return;
+            currentIndex++;
+            if (currentIndex >= total) {
+                showResult();
+            } else {
+                renderQuestion();
+            }
+        }
+
+        function showResult() {
+            quizArea.style.display = 'none';
+            resultArea.style.display = 'block';
+
+            const percentage = Math.round((score / total) * 100);
+            let emoji, title;
+
+            if (percentage >= 90) {
+                emoji = '🌟';
+                title = 'Excelente!';
+            } else if (percentage >= 70) {
+                emoji = '👍';
+                title = 'Muy bien!';
+            } else if (percentage >= 50) {
+                emoji = '📚';
+                title = 'Puedes mejorar';
+            } else {
+                emoji = '💪';
+                title = 'Sigue estudiando';
+            }
+
+            resultEmoji.textContent = emoji;
+            resultTitle.textContent = title;
+            resultScore.textContent = `Acertaste ${score} de ${total} preguntas (${percentage}%)`;
+        }
+
+        nextBtn.addEventListener('click', nextQuestion);
+
+        restartBtn.addEventListener('click', initQuiz);
+        playAgainBtn.addEventListener('click', initQuiz);
+
+        initQuiz();
+    </script>
+</body>
+</html>
