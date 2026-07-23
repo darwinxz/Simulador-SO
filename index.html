@@ -4,148 +4,436 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulador de Examen - Sistemas Operativos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0b0f1a;
+            color: #e8edf5;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 16px;
+            padding: 20px;
+            background-image:
+                radial-gradient(ellipse at 20% 50%, rgba(56, 189, 248, 0.04) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 50%, rgba(129, 140, 248, 0.04) 0%, transparent 60%);
         }
+
         .container {
-            background: linear-gradient(145deg, #1e293b, #1a2332);
-            border-radius: 20px;
-            padding: 40px;
-            max-width: 800px;
+            background: linear-gradient(170deg, #111827, #0f172a);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 820px;
             width: 100%;
-            box-shadow: 0 25px 60px -12px rgba(0,0,0,0.6);
+            box-shadow:
+                0 0 0 1px rgba(56, 189, 248, 0.06),
+                0 30px 80px -20px rgba(0, 0, 0, 0.8),
+                0 10px 30px -10px rgba(0, 0, 0, 0.5);
             position: relative;
-            overflow: hidden;
+            border: 1px solid rgba(56, 189, 248, 0.06);
         }
+
         .container::before {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0; height: 4px;
-            background: linear-gradient(90deg, #38bdf8, #818cf8, #38bdf8);
+            top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, transparent, #38bdf8, #818cf8, #38bdf8, transparent);
             background-size: 200% 100%;
-            animation: shimmer 3s ease-in-out infinite;
+            animation: shimmer 4s ease-in-out infinite;
         }
         @keyframes shimmer { 0%,100% { background-position: 0% 0; } 50% { background-position: 100% 0; } }
-        @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes bounceIn { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
-        @keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-8px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
+        @keyframes bounceIn { 0% { transform: scale(0); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+        @keyframes countUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.2); } 50% { box-shadow: 0 0 0 12px rgba(56, 189, 248, 0); } }
 
-        .screen { display: none; animation: fadeSlideIn 0.4s ease; }
-        .screen.active { display: block; }
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
 
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        .header h1 { font-size: 1.3rem; background: linear-gradient(135deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 700; }
-        .header-right { display: flex; align-items: center; gap: 16px; }
-        .progress-text { font-size: 0.85rem; color: #94a3b8; font-weight: 500; }
-        .score-badge { background: #334155; padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; color: #38bdf8; font-weight: 600; border: 1px solid #475569; }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            color: #0b0f1a;
+            font-weight: 800;
+        }
+        .logo-text {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #e8edf5;
+            letter-spacing: -0.3px;
+        }
+        .logo-text span {
+            color: #64748b;
+            font-weight: 400;
+        }
+        .top-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .badge {
+            background: rgba(56, 189, 248, 0.08);
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 0.8rem;
+            color: #38bdf8;
+            font-weight: 500;
+            border: 1px solid rgba(56, 189, 248, 0.12);
+            display: none;
+        }
 
-        .progress-dots { display: flex; gap: 6px; margin-bottom: 28px; flex-wrap: wrap; }
-        .progress-dot { flex: 1; height: 4px; border-radius: 2px; background: #334155; transition: background 0.4s ease; min-width: 4px; }
-        .progress-dot.active { background: #38bdf8; }
-        .progress-dot.correct { background: #10b981; }
-        .progress-dot.incorrect { background: #ef4444; }
+        .hero {
+            text-align: center;
+            padding: 24px 0 12px;
+        }
+        .hero-icon {
+            font-size: 3.5rem;
+            display: block;
+            margin-bottom: 16px;
+            filter: grayscale(0.3);
+        }
+        .hero h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            color: #64748b;
+            font-size: 1rem;
+            font-weight: 400;
+            margin-bottom: 8px;
+        }
+        .hero .sub {
+            font-size: 0.85rem;
+            color: #475569;
+            margin-bottom: 36px;
+        }
 
-        .question-number { font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-        .question-text { font-size: 1.2rem; font-weight: 600; margin-bottom: 28px; line-height: 1.7; color: #f1f5f9; }
-        .options { display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
-        .option { background: #263548; border: 2px solid #334155; border-radius: 14px; padding: 16px 20px; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); font-size: 1rem; line-height: 1.5; position: relative; overflow: hidden; }
-        .option::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(56,189,248,0.08), transparent); opacity: 0; transition: opacity 0.3s; }
-        .option:hover:not(.disabled) { background: #2d4057; border-color: #38bdf8; transform: translateX(4px); }
-        .option:hover:not(.disabled)::after { opacity: 1; }
-        .option .letter { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: #334155; font-size: 0.8rem; font-weight: 700; margin-right: 14px; transition: all 0.3s; flex-shrink: 0; }
-        .option:hover:not(.disabled) .letter { background: #38bdf8; color: #0f172a; }
-        .option.selected-correct { background: #064e3b; border-color: #10b981; transform: scale(1.01); }
-        .option.selected-correct .letter { background: #10b981; color: #0f172a; }
-        .option.selected-incorrect { background: #4a0e0e; border-color: #ef4444; animation: shake 0.4s ease; }
-        .option.selected-incorrect .letter { background: #ef4444; color: #0f172a; }
-        .option.show-correct { background: #064e3b; border-color: #10b981; }
-        .option.show-correct .letter { background: #10b981; color: #0f172a; }
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 36px;
+        }
+        .stat-card {
+            background: linear-gradient(170deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8));
+            border-radius: 16px;
+            padding: 24px 16px;
+            border: 1px solid rgba(148, 163, 184, 0.06);
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.2), transparent);
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        .stat-card:hover::after { opacity: 1; }
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(56, 189, 248, 0.15);
+            background: linear-gradient(170deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+        }
+        .stat-icon { font-size: 1.5rem; display: block; margin-bottom: 8px; }
+        .stat-number { font-size: 2rem; font-weight: 800; color: #f1f5f9; letter-spacing: -1px; }
+        .stat-number.accent { color: #38bdf8; }
+        .stat-label { font-size: 0.78rem; color: #64748b; margin-top: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-empty { color: #475569; }
+
+        .btn {
+            padding: 16px 40px;
+            border: none;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: inline-flex; align-items: center; gap: 10px; justify-content: center;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            color: #0b0f1a;
+        }
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px -8px rgba(56, 189, 248, 0.35);
+        }
+        .btn-primary:disabled {
+            background: rgba(51, 65, 85, 0.6);
+            color: #475569;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-ghost {
+            background: rgba(51, 65, 85, 0.3);
+            color: #94a3b8;
+            border: 1px solid rgba(148, 163, 184, 0.08);
+        }
+        .btn-ghost:hover {
+            background: rgba(51, 65, 85, 0.5);
+            color: #e8edf5;
+            transform: translateY(-2px);
+        }
+        .btn-block { width: 100%; }
+
+        .btn-start {
+            padding: 18px 56px;
+            font-size: 1.1rem;
+            margin-top: 8px;
+            animation: pulse 2.5s ease-in-out infinite;
+        }
+        .btn-start:hover { animation: none; }
+
+        .progress-track {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 32px;
+        }
+        .progress-step {
+            flex: 1;
+            height: 3px;
+            border-radius: 2px;
+            background: rgba(51, 65, 85, 0.4);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            min-width: 3px;
+            position: relative;
+        }
+        .progress-step.active { background: #38bdf8; }
+        .progress-step.correct { background: #10b981; }
+        .progress-step.incorrect { background: #ef4444; }
+
+        .q-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .q-number {
+            font-size: 0.75rem;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        .q-counter {
+            font-size: 0.75rem;
+            color: #475569;
+            font-weight: 500;
+        }
+
+        .q-text {
+            font-size: 1.15rem;
+            font-weight: 500;
+            margin-bottom: 28px;
+            line-height: 1.7;
+            color: #f1f5f9;
+            padding: 16px 20px;
+            background: rgba(30, 41, 59, 0.3);
+            border-radius: 14px;
+            border: 1px solid rgba(148, 163, 184, 0.04);
+        }
+
+        .options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+        .option {
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid rgba(148, 163, 184, 0.06);
+            border-radius: 14px;
+            padding: 16px 20px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            position: relative;
+        }
+        .option .letter {
+            width: 28px; height: 28px;
+            border-radius: 8px;
+            background: rgba(51, 65, 85, 0.3);
+            border: 1px solid rgba(148, 163, 184, 0.06);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 700;
+            flex-shrink: 0;
+            transition: all 0.3s;
+            color: #64748b;
+        }
+        .option:hover:not(.disabled) {
+            background: rgba(30, 41, 59, 0.6);
+            border-color: rgba(56, 189, 248, 0.2);
+            transform: translateX(4px);
+        }
+        .option:hover:not(.disabled) .letter {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: rgba(56, 189, 248, 0.3);
+            color: #38bdf8;
+        }
+        .option.selected-correct {
+            background: rgba(16, 185, 129, 0.08);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+        .option.selected-correct .letter {
+            background: #10b981;
+            border-color: #10b981;
+            color: #0b0f1a;
+        }
+        .option.selected-incorrect {
+            background: rgba(239, 68, 68, 0.08);
+            border-color: rgba(239, 68, 68, 0.3);
+            animation: shake 0.4s ease;
+        }
+        .option.selected-incorrect .letter {
+            background: #ef4444;
+            border-color: #ef4444;
+            color: #0b0f1a;
+        }
+        .option.show-correct {
+            background: rgba(16, 185, 129, 0.08);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+        .option.show-correct .letter {
+            background: #10b981;
+            border-color: #10b981;
+            color: #0b0f1a;
+        }
         .option.disabled { cursor: default; }
 
-        .feedback { padding: 16px 20px; border-radius: 14px; margin-bottom: 24px; font-weight: 500; display: none; animation: fadeSlideIn 0.3s ease; }
-        .feedback.correct { display: block; background: linear-gradient(135deg, #064e3b, #065f46); border: 1px solid #10b981; color: #a7f3d0; }
-        .feedback.incorrect { display: block; background: linear-gradient(135deg, #4a0e0e, #5f1010); border: 1px solid #ef4444; color: #fecaca; }
-        .feedback .label { font-weight: 700; font-size: 1.1rem; display: block; margin-bottom: 4px; }
+        .feedback {
+            padding: 16px 20px;
+            border-radius: 14px;
+            margin-bottom: 24px;
+            font-weight: 500;
+            display: none;
+            animation: fadeUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            font-size: 0.9rem;
+        }
+        .feedback.correct {
+            display: block;
+            background: rgba(16, 185, 129, 0.06);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+        }
+        .feedback.incorrect {
+            display: block;
+            background: rgba(239, 68, 68, 0.06);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+        }
+        .feedback .label { font-weight: 700; display: block; margin-bottom: 4px; font-size: 1rem; }
+        .feedback .detail { font-weight: 400; opacity: 0.85; font-size: 0.85rem; }
         .feedback .correct-label { color: #10b981; }
         .feedback .incorrect-label { color: #ef4444; }
-        .feedback .detail { font-weight: 400; color: #cbd5e1; font-size: 0.9rem; }
 
-        .actions { display: flex; justify-content: space-between; gap: 12px; }
-        .btn { padding: 14px 32px; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; gap: 8px; justify-content: center; }
-        .btn-primary { background: linear-gradient(135deg, #38bdf8, #818cf8); color: #0f172a; flex: 1; }
-        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px -5px rgba(56,189,248,0.4); }
-        .btn-primary:disabled { background: #334155; color: #64748b; cursor: not-allowed; transform: none; box-shadow: none; }
-        .btn-secondary { background: #334155; color: #cbd5e1; padding: 14px 20px; }
-        .btn-secondary:hover { background: #475569; transform: translateY(-2px); }
+        .actions { display: flex; gap: 10px; }
+        .actions .btn { flex: 1; padding: 14px 24px; }
 
-        .home { text-align: center; padding: 40px 0 20px; }
-        .home-icon { font-size: 4rem; display: block; margin-bottom: 12px; }
-        .home h1 { font-size: 1.8rem; background: linear-gradient(135deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px; }
-        .home p { color: #94a3b8; font-size: 1rem; margin-bottom: 32px; }
+        .result-content { text-align: center; padding: 12px 0; }
+        .result-emoji { font-size: 4.5rem; margin-bottom: 8px; display: block; animation: bounceIn 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
+        .result-title { font-size: 2.2rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 4px; background: linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .result-subtitle { color: #64748b; font-size: 0.95rem; margin-bottom: 28px; }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 36px; }
-        .stat-card { background: #263548; border-radius: 16px; padding: 24px 16px; border: 1px solid #334155; transition: all 0.3s; }
-        .stat-card:hover { border-color: #38bdf8; transform: translateY(-4px); box-shadow: 0 8px 25px -5px rgba(56,189,248,0.15); }
-        .stat-card .stat-icon { font-size: 1.8rem; display: block; margin-bottom: 8px; }
-        .stat-card .stat-number { font-size: 2rem; font-weight: 800; color: #f1f5f9; }
-        .stat-card .stat-number.pct { color: #38bdf8; }
-        .stat-card .stat-label { font-size: 0.8rem; color: #64748b; margin-top: 4px; }
+        .score-ring {
+            width: 170px; height: 170px; margin: 0 auto 28px; position: relative;
+        }
+        .score-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+        .score-ring svg circle { fill: none; stroke-width: 5; }
+        .score-ring .ring-bg { stroke: rgba(51, 65, 85, 0.3); }
+        .score-ring .ring-fg {
+            stroke: url(#grad);
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .score-ring .center {
+            position: absolute;
+            inset: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .score-ring .number { font-size: 3rem; font-weight: 800; color: #f1f5f9; letter-spacing: -2px; line-height: 1; }
+        .score-ring .total { font-size: 0.85rem; color: #64748b; }
 
-        .btn-home { background: linear-gradient(135deg, #38bdf8, #818cf8); color: #0f172a; padding: 16px 48px; font-size: 1.15rem; border-radius: 14px; }
-        .btn-home:hover { transform: translateY(-3px); box-shadow: 0 10px 30px -5px rgba(56,189,248,0.4); }
-
-        .result-content { text-align: center; padding: 20px 0; }
-        .result-emoji { font-size: 5rem; margin-bottom: 12px; animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
-        .result h2 { font-size: 2rem; margin-bottom: 6px; background: linear-gradient(135deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .result .subtitle { color: #94a3b8; font-size: 1rem; margin-bottom: 24px; }
-
-        .score-circle { width: 160px; height: 160px; border-radius: 50%; margin: 0 auto 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-        .score-circle svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
-        .score-circle svg circle { fill: none; stroke-width: 6; cx: 80; cy: 80; r: 74; }
-        .score-circle .bg-circle { stroke: #334155; }
-        .score-circle .progress-circle { stroke: url(#grad); stroke-linecap: round; transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1); }
-        .score-number { font-size: 2.8rem; font-weight: 800; color: #f1f5f9; line-height: 1; }
-        .score-total { font-size: 0.9rem; color: #94a3b8; }
-        .result-details { display: flex; justify-content: center; gap: 32px; margin-bottom: 28px; }
+        .result-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 32px;
+        }
         .result-stat { text-align: center; }
-        .result-stat .num { font-size: 1.5rem; font-weight: 700; }
+        .result-stat .num { font-size: 1.6rem; font-weight: 700; }
         .result-stat .num.green { color: #10b981; }
         .result-stat .num.red { color: #ef4444; }
-        .result-stat .lbl { font-size: 0.8rem; color: #64748b; margin-top: 2px; }
-        .result .btn { max-width: 300px; margin: 0 auto; }
-        .result .btn-home { max-width: 300px; margin-top: 12px; }
+        .result-stat .lbl { font-size: 0.75rem; color: #64748b; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        @media (max-width: 600px) {
-            body { padding: 10px; }
-            .container { padding: 20px; border-radius: 16px; }
-            .header h1 { font-size: 1.1rem; }
-            .question-text { font-size: 1rem; }
-            .option { padding: 12px 16px; font-size: 0.9rem; }
-            .option .letter { width: 24px; height: 24px; font-size: 0.75rem; margin-right: 10px; }
-            .btn { padding: 12px 20px; font-size: 0.9rem; }
-            .actions { flex-direction: column; }
-            .btn-secondary { width: 100%; }
-            .result h2 { font-size: 1.5rem; }
-            .result-emoji { font-size: 3.5rem; }
-            .score-circle { width: 130px; height: 130px; }
-            .score-circle svg circle { cx: 65; cy: 65; r: 60; }
-            .score-number { font-size: 2.2rem; }
-            .result-details { gap: 20px; }
-            .home h1 { font-size: 1.4rem; }
-            .home-icon { font-size: 3rem; }
-            .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .result-actions { display: flex; flex-direction: column; gap: 10px; max-width: 340px; margin: 0 auto; }
+
+        @media (max-width: 640px) {
+            body { padding: 12px; }
+            .container { padding: 24px; border-radius: 18px; }
+            .hero h1 { font-size: 1.5rem; }
+            .hero-icon { font-size: 2.5rem; }
+            .stats-row { grid-template-columns: repeat(3, 1fr); gap: 8px; }
             .stat-card { padding: 16px 10px; }
-            .stat-card .stat-number { font-size: 1.5rem; }
-            .btn-home { padding: 14px 32px; font-size: 1rem; }
+            .stat-number { font-size: 1.5rem; }
+            .q-text { font-size: 1rem; padding: 12px 16px; }
+            .option { padding: 12px 16px; font-size: 0.85rem; gap: 10px; }
+            .option .letter { width: 24px; height: 24px; font-size: 0.7rem; }
+            .btn { padding: 14px 24px; font-size: 0.9rem; }
+            .btn-start { padding: 16px 32px; font-size: 1rem; }
+            .actions { flex-direction: column; }
+            .result-title { font-size: 1.6rem; }
+            .result-emoji { font-size: 3.5rem; }
+            .score-ring { width: 140px; height: 140px; }
+            .score-ring .number { font-size: 2.4rem; }
+            .result-stats { gap: 24px; }
+            .top-bar { margin-bottom: 24px; padding-bottom: 16px; }
+            .logo-text { font-size: 0.95rem; }
+            .logo-icon { width: 32px; height: 32px; font-size: 0.95rem; }
+        }
+        @media (max-width: 400px) {
+            .stats-row { grid-template-columns: 1fr; gap: 6px; }
+            .stat-card { padding: 12px; display: flex; align-items: center; gap: 12px; text-align: left; }
+            .stat-icon { margin-bottom: 0; font-size: 1.2rem; }
+            .stat-number { font-size: 1.2rem; }
+            .stat-card div { flex: 1; }
+            .stat-label { margin-top: 0; }
         }
     </style>
 </head>
@@ -159,84 +447,79 @@
         </defs>
     </svg>
 
-    <div class="container" id="app">
-        <div class="header" id="mainHeader">
-            <h1>Simulador SO</h1>
-            <div class="header-right">
-                <span class="score-badge" id="scoreBadge" style="display:none">0 correctas</span>
-                <span class="progress-text" id="progressText" style="display:none">1 / 74</span>
+    <div class="container">
+        <div class="top-bar">
+            <div class="logo">
+                <div class="logo-icon">SO</div>
+                <div class="logo-text">Simulador <span>| SO</span></div>
+            </div>
+            <div class="top-right">
+                <span class="badge" id="liveBadge">0 correctas</span>
             </div>
         </div>
 
         <div id="homeScreen" class="screen active">
-            <div class="home">
-                <span class="home-icon">🖥️</span>
-                <h1>Simulador de Examen</h1>
-                <p>Sistemas Operativos</p>
-                <div class="stats-grid" id="statsGrid">
-                    <div class="stat-card">
-                        <span class="stat-icon">📝</span>
-                        <div class="stat-number" id="statAttempts">0</div>
-                        <div class="stat-label">Intentos</div>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-icon">📊</span>
-                        <div class="stat-number pct" id="statAverage">—</div>
-                        <div class="stat-label">Promedio</div>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-icon">🏆</span>
-                        <div class="stat-number pct" id="statBest">—</div>
-                        <div class="stat-label">Mejor nota</div>
-                    </div>
-                </div>
-                <button class="btn btn-home" id="startBtn">Comenzar cuestionario</button>
+            <div class="hero">
+                <span class="hero-icon">🖥️</span>
+                <h1>Cuestionario SO</h1>
+                <p>Evaluación de conocimientos</p>
+                <div class="sub">75 preguntas · Sistemas Operativos · Nivel universitario</div>
             </div>
+            <div class="stats-row" id="statsRow">
+                <div class="stat-card">
+                    <span class="stat-icon">📝</span>
+                    <div><div class="stat-number" id="statAttempts">0</div><div class="stat-label">Intentos</div></div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">📊</span>
+                    <div><div class="stat-number accent" id="statAverage">—</div><div class="stat-label">Promedio</div></div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">🏆</span>
+                    <div><div class="stat-number accent" id="statBest">—</div><div class="stat-label">Mejor nota</div></div>
+                </div>
+            </div>
+            <button class="btn btn-primary btn-block btn-start" id="startBtn">Comenzar examen</button>
         </div>
 
         <div id="quizScreen" class="screen">
-            <div class="progress-dots" id="progressDots"></div>
-            <div class="question-card" id="questionCard">
-                <div class="question-number" id="questionNumber">PREGUNTA 1</div>
-                <div class="question-text" id="questionText"></div>
-                <div class="options" id="optionsContainer"></div>
-                <div class="feedback" id="feedback"></div>
-                <div class="actions">
-                    <button class="btn btn-secondary" id="quitBtn">Salir</button>
-                    <button class="btn btn-primary" id="nextBtn" disabled>
-                        <span>Siguiente</span> <span>→</span>
-                    </button>
-                </div>
+            <div class="progress-track" id="progressTrack"></div>
+            <div class="q-header">
+                <span class="q-number" id="qNumber">PREGUNTA 1</span>
+                <span class="q-counter" id="qCounter">1 / 75</span>
+            </div>
+            <div class="q-text" id="qText"></div>
+            <div class="options" id="optionsContainer"></div>
+            <div class="feedback" id="feedback"></div>
+            <div class="actions">
+                <button class="btn btn-ghost" id="quitBtn">← Salir</button>
+                <button class="btn btn-primary" id="nextBtn" disabled>Siguiente →</button>
             </div>
         </div>
 
         <div id="resultScreen" class="screen">
             <div class="result-content">
-                <div class="result-emoji" id="resultEmoji"></div>
-                <h2 id="resultTitle"></h2>
-                <div class="subtitle" id="resultSubtitle"></div>
-                <div class="score-circle" id="scoreCircle">
-                    <svg viewBox="0 0 160 160">
-                        <circle class="bg-circle" cx="80" cy="80" r="74"/>
-                        <circle class="progress-circle" id="progressCircle" cx="80" cy="80" r="74" stroke-dasharray="465" stroke-dashoffset="465"/>
+                <span class="result-emoji" id="resultEmoji"></span>
+                <div class="result-title" id="resultTitle"></div>
+                <div class="result-subtitle" id="resultSubtitle"></div>
+                <div class="score-ring">
+                    <svg viewBox="0 0 170 170">
+                        <circle class="ring-bg" cx="85" cy="85" r="78"/>
+                        <circle class="ring-fg" id="ringFg" cx="85" cy="85" r="78" stroke-dasharray="490" stroke-dashoffset="490"/>
                     </svg>
-                    <div>
-                        <div class="score-number" id="scoreNumber">0</div>
-                        <div class="score-total" id="scoreTotal">/ 74</div>
+                    <div class="center">
+                        <div class="number" id="scoreNumber">0</div>
+                        <div class="total" id="scoreTotal">/ 75</div>
                     </div>
                 </div>
-                <div class="result-details">
-                    <div class="result-stat">
-                        <div class="num green" id="correctCount">0</div>
-                        <div class="lbl">Correctas</div>
-                    </div>
-                    <div class="result-stat">
-                        <div class="num red" id="incorrectCount">0</div>
-                        <div class="lbl">Incorrectas</div>
-                    </div>
+                <div class="result-stats">
+                    <div class="result-stat"><div class="num green" id="correctCount">0</div><div class="lbl">Correctas</div></div>
+                    <div class="result-stat"><div class="num red" id="incorrectCount">0</div><div class="lbl">Incorrectas</div></div>
                 </div>
-                <button class="btn btn-primary" id="retryBtn">Intentar de nuevo</button>
-                <button class="btn btn-secondary btn-home" id="homeBtn">Volver al inicio</button>
+                <div class="result-actions">
+                    <button class="btn btn-primary btn-block" id="retryBtn">Intentar de nuevo</button>
+                    <button class="btn btn-ghost btn-block" id="homeBtn">Volver al inicio</button>
+                </div>
             </div>
         </div>
     </div>
@@ -328,117 +611,106 @@
         }
         function saveStats(s) { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
 
-        function getDerivedStats() {
+        function getDerived() {
             const s = loadStats();
             const count = s.attempts.length;
             const avg = count > 0 ? s.attempts.reduce((a, b) => a + b, 0) / count : null;
             return { count, avg, best: s.best };
         }
 
-        function updateHomeStats() {
-            const { count, avg, best } = getDerivedStats();
+        function updateHome() {
+            const { count, avg, best } = getDerived();
             document.getElementById('statAttempts').textContent = count;
             document.getElementById('statAverage').textContent = avg !== null ? Math.round(avg) + '%' : '—';
             document.getElementById('statBest').textContent = best !== null ? best + '%' : '—';
         }
 
-        function showScreen(id) {
+        function show(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            const h = document.getElementById('mainHeader');
-            const sb = h.querySelector('.score-badge');
-            const pt = h.querySelector('.progress-text');
-            if (id === 'quizScreen') { sb.style.display = ''; pt.style.display = ''; }
-            else { sb.style.display = 'none'; pt.style.display = 'none'; }
+            document.getElementById('liveBadge').style.display = id === 'quizScreen' ? '' : 'none';
         }
 
-        let state = { questions: [], currentIndex: 0, score: 0, answered: false, results: [] };
+        let state = { questions: [], i: 0, score: 0, answered: false, results: [] };
 
         function shuffle(a) { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; }
 
         function startQuiz() {
-            state.questions = shuffle(preguntas);
-            state.currentIndex = 0; state.score = 0; state.answered = false;
-            state.results = new Array(total).fill(null);
-            showScreen('quizScreen');
-            renderDots(); renderQuestion();
+            state = { questions: shuffle(preguntas), i: 0, score: 0, answered: false, results: new Array(total).fill(null) };
+            show('quizScreen');
+            renderTrack(); renderQ();
         }
 
-        function renderDots() {
-            const d = document.getElementById('progressDots'); d.innerHTML = '';
+        function renderTrack() {
+            const t = document.getElementById('progressTrack'); t.innerHTML = '';
             state.results.forEach((r, i) => {
-                const dot = document.createElement('div');
-                dot.className = 'progress-dot';
-                if (i === state.currentIndex && !r) dot.classList.add('active');
-                else if (r === 'correct') dot.classList.add('correct');
-                else if (r === 'incorrect') dot.classList.add('incorrect');
-                d.appendChild(dot);
+                const s = document.createElement('div'); s.className = 'progress-step';
+                if (i === state.i && !r) s.classList.add('active');
+                else if (r === 'correct') s.classList.add('correct');
+                else if (r === 'incorrect') s.classList.add('incorrect');
+                t.appendChild(s);
             });
         }
 
-        function renderQuestion() {
-            if (state.currentIndex >= total) { showResultScreen(); return; }
+        function renderQ() {
+            if (state.i >= total) { showResult(); return; }
             state.answered = false;
             const fb = document.getElementById('feedback'); fb.className = 'feedback'; fb.style.display = 'none';
             document.getElementById('nextBtn').disabled = true;
-            const q = state.questions[state.currentIndex];
-            const num = state.currentIndex + 1;
-            document.getElementById('questionNumber').textContent = 'PREGUNTA ' + num;
-            document.getElementById('questionText').textContent = q.pregunta;
-            document.getElementById('progressText').textContent = num + ' / ' + total;
-            document.getElementById('scoreBadge').textContent = state.score + ' correctas';
-            renderDots();
+            const q = state.questions[state.i]; const n = state.i + 1;
+            document.getElementById('qNumber').textContent = 'PREGUNTA ' + n;
+            document.getElementById('qText').textContent = q.pregunta;
+            document.getElementById('qCounter').textContent = n + ' / ' + total;
+            document.getElementById('liveBadge').textContent = state.score + ' correctas';
+            renderTrack();
             const oc = document.getElementById('optionsContainer'); oc.innerHTML = '';
             const letters = ['A','B','C','D'];
             q.opciones.forEach((opt, idx) => {
-                const div = document.createElement('div'); div.className = 'option';
-                div.innerHTML = '<span class="letter">' + letters[idx] + '</span>' + opt;
-                div.dataset.index = idx; div.addEventListener('click', () => selectOption(idx)); oc.appendChild(div);
+                const d = document.createElement('div'); d.className = 'option';
+                d.innerHTML = '<span class="letter">' + letters[idx] + '</span><span>' + opt + '</span>';
+                d.dataset.index = idx; d.addEventListener('click', () => pick(idx)); oc.appendChild(d);
             });
-            const qc = document.getElementById('questionCard');
-            qc.style.animation = 'none';
-            requestAnimationFrame(() => { qc.style.animation = 'fadeSlideIn 0.4s ease'; });
+            document.getElementById('qText').style.animation = 'none';
+            requestAnimationFrame(() => { document.getElementById('qText').style.animation = 'fadeUp 0.4s cubic-bezier(0.16,1,0.3,1)'; });
         }
 
-        function selectOption(idx) {
+        function pick(idx) {
             if (state.answered) return;
             state.answered = true;
-            const q = state.questions[state.currentIndex];
-            const options = document.getElementById('optionsContainer').querySelectorAll('.option');
-            const isCorrect = idx === q.respuestaCorrecta;
-            options.forEach((opt, i) => {
-                opt.classList.add('disabled');
-                if (i === idx && isCorrect) opt.classList.add('selected-correct');
-                else if (i === idx && !isCorrect) opt.classList.add('selected-incorrect');
-                else if (i === q.respuestaCorrecta && !isCorrect) opt.classList.add('show-correct');
+            const q = state.questions[state.i];
+            const opts = document.getElementById('optionsContainer').querySelectorAll('.option');
+            const correct = idx === q.respuestaCorrecta;
+            opts.forEach((o, i) => {
+                o.classList.add('disabled');
+                if (i === idx && correct) o.classList.add('selected-correct');
+                else if (i === idx && !correct) o.classList.add('selected-incorrect');
+                else if (i === q.respuestaCorrecta && !correct) o.classList.add('show-correct');
             });
             const fb = document.getElementById('feedback');
-            if (isCorrect) {
-                state.score++; state.results[state.currentIndex] = 'correct';
+            if (correct) {
+                state.score++; state.results[state.i] = 'correct';
                 fb.className = 'feedback correct';
                 fb.innerHTML = '<span class="label correct-label">Correcto</span>';
-                document.getElementById('scoreBadge').textContent = state.score + ' correctas';
+                document.getElementById('liveBadge').textContent = state.score + ' correctas';
             } else {
-                state.results[state.currentIndex] = 'incorrect';
+                state.results[state.i] = 'incorrect';
                 fb.className = 'feedback incorrect';
-                fb.innerHTML = '<span class="label incorrect-label">Incorrecto</span><span class="detail">Respuesta correcta: ' + q.opciones[q.respuestaCorrecta] + '</span>';
+                fb.innerHTML = '<span class="label incorrect-label">Incorrecto</span><span class="detail">' + q.opciones[q.respuestaCorrecta] + '</span>';
             }
-            fb.style.display = 'block'; renderDots();
+            fb.style.display = 'block'; renderTrack();
             const nb = document.getElementById('nextBtn');
-            if (state.currentIndex === total - 1) nb.innerHTML = '<span>Ver resultados</span> <span>→</span>';
-            else nb.innerHTML = '<span>Siguiente</span> <span>→</span>';
+            nb.textContent = state.i === total - 1 ? 'Ver resultados →' : 'Siguiente →';
             nb.disabled = false;
         }
 
-        function nextQuestion() {
+        function next() {
             if (document.getElementById('nextBtn').disabled) return;
-            state.currentIndex++;
-            if (state.currentIndex >= total) showResultScreen();
-            else renderQuestion();
+            state.i++;
+            if (state.i >= total) showResult(); else renderQ();
         }
 
-        function showResultScreen() {
-            showScreen('resultScreen');
+        function showResult() {
+            show('resultScreen');
             const correct = state.results.filter(r => r === 'correct').length;
             const incorrect = state.results.filter(r => r === 'incorrect').length;
             const pct = Math.round((correct / total) * 100);
@@ -446,43 +718,39 @@
             stats.attempts.push(pct);
             if (stats.best === null || pct > stats.best) stats.best = pct;
             saveStats(stats);
-
-            let emoji, title, subtitle;
-            if (pct >= 90) { emoji = '🌟'; title = 'Excelente!'; subtitle = 'Dominas los sistemas operativos'; }
-            else if (pct >= 70) { emoji = '👍'; title = 'Muy bien!'; subtitle = 'Tienes un buen conocimiento'; }
-            else if (pct >= 50) { emoji = '📚'; title = 'Puedes mejorar'; subtitle = 'Repasa los temas donde fallaste'; }
-            else { emoji = '💪'; title = 'Sigue estudiando'; subtitle = 'Revisa los fundamentos e inténtalo de nuevo'; }
-
+            let emoji, title, sub;
+            if (pct >= 90) { emoji = '🌟'; title = 'Excelente'; sub = 'Has demostrado un dominio sobresaliente'; }
+            else if (pct >= 70) { emoji = '👍'; title = 'Buen trabajo'; sub = 'Tienes una base sólida en sistemas operativos'; }
+            else if (pct >= 50) { emoji = '📚'; title = 'Puedes mejorar'; sub = 'Identifica tus áreas débiles y repasa'; }
+            else { emoji = '💪'; title = 'Sigue practicando'; sub = 'Revisa los fundamentos e inténtalo de nuevo'; }
             document.getElementById('resultEmoji').textContent = emoji;
             document.getElementById('resultTitle').textContent = title;
-            document.getElementById('resultSubtitle').textContent = subtitle;
+            document.getElementById('resultSubtitle').textContent = sub;
             document.getElementById('correctCount').textContent = correct;
             document.getElementById('incorrectCount').textContent = incorrect;
             document.getElementById('scoreTotal').textContent = '/ ' + total;
             document.getElementById('scoreNumber').textContent = '0';
-
-            const circumference = 2 * Math.PI * 74;
-            const pc = document.getElementById('progressCircle');
-            pc.style.strokeDasharray = circumference; pc.style.strokeDashoffset = circumference;
-            let current = 0;
+            const c = 2 * Math.PI * 78;
+            const r = document.getElementById('ringFg');
+            r.style.strokeDasharray = c; r.style.strokeDashoffset = c;
+            let cur = 0;
             const step = Math.max(1, Math.floor(correct / 30));
-            const interval = setInterval(() => {
-                current += step; if (current >= correct) { current = correct; clearInterval(interval); }
-                document.getElementById('scoreNumber').textContent = current;
+            const iv = setInterval(() => {
+                cur += step; if (cur >= correct) { cur = correct; clearInterval(iv); }
+                document.getElementById('scoreNumber').textContent = cur;
             }, 20);
-            setTimeout(() => { pc.style.strokeDashoffset = circumference - (pct / 100) * circumference; }, 100);
-            updateHomeStats();
+            setTimeout(() => { r.style.strokeDashoffset = c - (pct / 100) * c; }, 100);
+            updateHome();
         }
 
-        function goHome() { showScreen('homeScreen'); updateHomeStats(); }
+        function goHome() { show('homeScreen'); updateHome(); }
 
         document.getElementById('startBtn').addEventListener('click', startQuiz);
-        document.getElementById('nextBtn').addEventListener('click', nextQuestion);
+        document.getElementById('nextBtn').addEventListener('click', next);
         document.getElementById('quitBtn').addEventListener('click', goHome);
         document.getElementById('retryBtn').addEventListener('click', startQuiz);
         document.getElementById('homeBtn').addEventListener('click', goHome);
-
-        updateHomeStats();
+        updateHome();
     </script>
 </body>
 </html>
